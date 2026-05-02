@@ -33,6 +33,8 @@ class Application
     @orbs = [Orb.new(@orb_positions[0][:x], @orb_positions[0][:z], @item_radius),
              Orb.new(@orb_positions[1][:x], @orb_positions[1][:z], @item_radius),
              Orb.new(@orb_positions[2][:x], @orb_positions[2][:z], @item_radius)]
+    @collected_orbs = 0
+
     @goal = Goal.new(@goal_position[:x], @goal_position[:z], @item_radius)
 
     @items = [*@orbs, @goal]
@@ -85,7 +87,7 @@ class Application
     @minimap_camera[:position] = Vector3.create(@maze.grid_map_w * @block_w * 0.5, 10.0, @maze.grid_map_h * @block_h * 0.5)
     @minimap_camera[:target] = Vector3.create(@maze.grid_map_w * @block_w * 0.5, 0.0, @maze.grid_map_h * @block_h * 0.5)
     @minimap_camera[:up] = Vector3.create(0.0, 0.0, -1.0)
-    @minimap_camera[:fovy] = 30.0
+    @minimap_camera[:fovy] = 15.0
     @minimap_camera[:projection] = CAMERA_ORTHOGRAPHIC
 
     @player_camera = Camera.new
@@ -147,6 +149,8 @@ class Application
                   false
                 end
 
+      @collected_orbs = @orbs.count { |orb| orb.collected }
+
       if @time < 0
         @time = 5.0
         @game_state = STATE_FAILED
@@ -199,13 +203,17 @@ class Application
 
     case @game_state
     when STATE_READY
-      DrawText("R E A D Y ?", 90, 40, 10, DARKGRAY)
+      show = (@time * 10).round % 2 == 1
+      DrawText("R E A D Y ?", 90, 40, 10, DARKGRAY) if show
     when STATE_PLAYING
-      DrawText("TIME : %06.3f" % @time, 70, 60, 10, RED)
-      DrawText("- Move: W, A, S, D", 40, 20, 10, DARKGRAY)
+      DrawText("Collect all orbs and get to goal", 40, 20, 10, DARKGRAY)
+      DrawText("- Move: W, A, S, D", 40, 30, 10, DARKGRAY)
       DrawText("- Yaw: Q/E or Arrow Left/Right", 40, 40, 10, DARKGRAY)
+      DrawText("ORBS : #{@collected_orbs}/#{@orbs.size}", 70, 50, 10, RED)
+      DrawText("TIME : %06.3f" % @time, 70, 60, 10, RED)
     when STATE_SUCCEEDED
-      DrawText("F I N I S H !", 85, 40, 10, DARKGRAY)
+      show = (@time * 10).round % 2 == 1
+      DrawText("F I N I S H !", 85, 40, 10, DARKGRAY) if show
       DrawText("Clear Time: %2.3f" %  @clear_time, 70, 60, 10, DARKGRAY)
     when STATE_FAILED
       DrawText("G A M E  O V E R", 75, 40, 10, DARKGRAY)
@@ -339,8 +347,8 @@ class Application
 end
 
 if __FILE__ == $PROGRAM_NAME
-  screenWidth = 800
-  screenHeight = 450
+  screenWidth = 1280
+  screenHeight = 720
   InitWindow(screenWidth, screenHeight, "Yet Another Ruby-raylib bindings - Maze walker")
   SetTargetFPS(60)
 
